@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react'
 import Expenses from './Expenses.jsx'
 import AddExpense from './AddExpense.jsx'
 import OptionMenu from './OptionMenu.jsx'
+import Dashboard from './Dashboard.jsx'
 
 function App() {
   const [expenses, setExpenses] = useState([]); // Track expenses using states
   const [total, setTotal] = useState(0);  // Track total of expense amounts using states
-  const [categories, setCategories] = useState([]);
+  const [categories, setCategories] = useState([]); // Track what categories are currently in use
 
   useEffect(() => {
         fetch("http://localhost:3000/expenses") // Fetch the list of expenses from the backend
@@ -25,22 +26,26 @@ function App() {
   }, []);
 
   useEffect(() => {
-    fetch("http://localhost:3000/categories")
+    fetch("http://localhost:3000/categories") // Fetch the categories that are currently present in expenses
       .then((response) => response.json())
       .then((data) => {
-        setCategories(data);
+        setCategories(data);  // Update the category state with the fetched data
       });
   }, []);
 
   return (
-    <>
-      <h1 className="text-3xl font-bold text-center m-4">
-          Expenses
-      </h1>
-      <Expenses expenses={expenses} total={total} categories={categories}
-                setExpenses={setExpenses} setTotal={setTotal}/>
-      <AddExpense expenses={expenses} categories={categories} setExpenses={setExpenses} setTotal={setTotal} />
-    </>
+    <div className="relative min-h-screen bg-[url('/forest-background.jpg')]
+                    bg-cover bg-center bg-fixed
+                    py-4"
+    >
+      <div className="absolute inset-0 bg-black/40"></div>  
+      <div className="relative z-10">
+        <Dashboard expenses={expenses} total={total} categories={categories} />
+        <Expenses expenses={expenses} total={total} categories={categories}
+                  setExpenses={setExpenses} setTotal={setTotal}/>
+        <AddExpense expenses={expenses} categories={categories} setExpenses={setExpenses} setTotal={setTotal} />
+      </div>
+    </div>
   )
 }
 
