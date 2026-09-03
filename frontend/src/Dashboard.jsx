@@ -1,41 +1,90 @@
+import { useState } from 'react';
+
 import DashboardBlock from "./DashboardBlock";
 import DashboardPieChart from "./DashboardPieChart";
+import ExpenseChart from "./ExpenseChart";
 
 function Dashboard({ expenses, total, categories }) {
+    const [dateOption, setDateOption] = useState("30days"); // Track what date range to display
 
-    const sortedExpenses = [...expenses];
-    sortedExpenses.sort((a, b) => b.amount - a.amount);
-    const largestExpense = sortedExpenses[0];
+    const currentDate = new Date();
+    const timeRange = new Date(currentDate);
 
-    let averageExpenseCost = total / expenses.length;
+    // Set the time range according to date option selected
+    if(dateOption === "30days") {
+        timeRange.setDate(currentDate.getDate() - 30);
+    } else if(dateOption === "3months") {
+        timeRange.setDate(currentDate.getDate() - 90);
+    } else if(dateOption === "6months") {
+        timeRange.setDate(currentDate.getDate() - 180);
+    } else if(dateOption === "1year") {
+        timeRange.setDate(currentDate.getDate() - 365);
+    } else if(dateOption === "2years") {
+        timeRange.setDate(currentDate.getDate() - (365 * 2));
+    }
 
-    // Calculate total amounts for each category
-    const categoryTotals = expenses.reduce((totals, expense) => {
-        const category = expense.category;  // Store the expense's category
+    // Filter expenses based on date range
+    const expenseRange = expenses.filter((expense) => {
+        const expenseDate = new Date(expense.date);
+        return expenseDate >= timeRange && expenseDate <= currentDate;
+    });
 
-        // Only runs if the category has not yet been encountered
-        if(!totals[category]) {
-            totals[category] = 0;
+    // Calculate the total expense amount for expenses within time range
+    const timeRangeTotal = expenseRange.reduce((rangeTotal, expense) => {
+        rangeTotal += expense.amount;
+
+        return rangeTotal;
+    }, 0);
+
+    // Calculate the largest expense within time range
+    const largestExpense = expenseRange.sort((a, b) => b.amount - a.amount)[0];
+
+    // Calculate the average expense cost within time range
+    let averageExpenseCost = timeRangeTotal / expenseRange.length;
+
+    // Group expenses by category for other features
+    const expensesByCategory = expenseRange.reduce((groups, expense) => {
+        const category = expense.category;
+
+        // Execute if category has not been encountered yet
+        if(!groups[category]) {
+            groups[category] = [];
         }
 
-        totals[category] += expense.amount; // Add the expense's amount to the category total
+        groups[category].push(expense);
 
-        return totals;
+        return groups;
     }, {});
 
-    const pieChartData = Object.entries(categoryTotals).map(
-        ([category, amount]) => ({
-            category,
-            amount
-        })
+    // Group expenses by date for other features
+    const expensesByDate = expenseRange.reduce((groups, expense) => {
+       const date = expense.date;
+       
+       // Execute if date has not been encountered yet
+       if(!groups[date]) {
+        groups[date] = [];
+       }
+
+        groups[date].push(expense);
+
+        return groups;
+    }, {});
+
+    // Calculate the total expense amounts for each category
+    const categoryTotals = Object.entries(expensesByCategory).reduce(
+        (totals, [category, expenses]) => {
+            totals[category] = expenses.reduce(
+                (total, expense) => total + expense.amount,
+                0
+            );
+
+            return totals;
+        },
+        {}
     );
 
-    // Calculate the category with the highest combined total
-    const highestCategory = Object.entries(categoryTotals).length > 0
-        ? Object.entries(categoryTotals).reduce((highest, current) => {
-            return current[1] > highest[1] ? current : highest;
-        })
-        : ["", 0];
+    // Calculate the category with the largest total expense amount
+    const largestCategory = Object.entries(categoryTotals).sort((a, b) => b.amount - a.amount)[0];
 
     return (
         <div className="w-6/7 min-h-fit p-4 mt-4 bg-sky-50 justify-self-center
@@ -47,17 +96,32 @@ function Dashboard({ expenses, total, categories }) {
             >
                 Dashboard
             </h1>
+            <select value={dateOption}
+                    onChange={(e) => {
+                        setDateOption(e.target.value)
+                    }}
+                    className="p-2 m-2"
+            >
+                <option value="30days">Past 30 Days</option>
+                <option value="3months">Past 3 months</option>
+                <option value="6months">Past 6 months</option>
+                <option value="1year">Past year</option>
+                <option value="2years">Past 2 years</option>
+            </select>
             {expenses.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
                     <DashboardBlock title={"Largest Expense"} amount={`$${largestExpense.amount}`} subtitle={largestExpense.name}/>
                     <DashboardBlock title={"Average Spending"} amount={`$${averageExpenseCost.toFixed(2)}`} />
-                    <DashboardBlock title={"Total Spent"} amount={`$${total.toFixed(2)}`}/>
-                    <DashboardBlock title={"Top Category"} amount={`$${highestCategory[1].toFixed(2)}`} subtitle={highestCategory[0]}/>
+                    <DashboardBlock title={"Number of Expenses"} amount={expenseRange.length} />
+                    <DashboardBlock title={"Highest Category"} amount={`$${largestCategory[1]}`} subtitle={largestCategory[0]} />
                 </div>
             ) : (
                 <p>No expenses available...</p>
             )}
-            <DashboardPieChart data={pieChartData} total={total}/>
+            <div className="flex flex-row gap-4 w-full items-center pb-8">
+                <DashboardPieChart data={expensesByCategory} total={timeRangeTotal}/>
+                <ExpenseChart data={expensesByDate} />
+            </div>
         </div>
     );
 }

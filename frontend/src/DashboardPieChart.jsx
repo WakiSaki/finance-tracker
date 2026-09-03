@@ -9,11 +9,32 @@ function DashboardPieChart({ data, total }) {
         "#a855f7"
     ];
 
+    // Calculate the total expense amount for each category
+    const categoryTotals = Object.entries(data).reduce(
+        (totals, [category, expenses]) => {
+            totals[category] = expenses.reduce(
+                (total, expense) => total + expense.amount,
+                0
+            );
+
+            return totals;
+        },
+        {}
+    );
+
+    // Converts category amount total into chart data
+    const pieChartData = Object.entries(categoryTotals).map(
+        ([category, amount]) => ({
+            category,
+            amount
+        })
+    );
+
     return (
-        <div className="w-full h-96 m-4">
+        <div className="w-1/2 h-96">
             <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                    <Pie data={data}
+                    <Pie data={pieChartData}
                          dataKey="amount"
                          nameKey="category"
                          cx="50%"
@@ -24,7 +45,7 @@ function DashboardPieChart({ data, total }) {
                             `${category} ${(percent * 100).toFixed(0)}%`
                          }
                     >
-                        {data.map((entry, index) => (
+                        {pieChartData.map((entry, index) => (
                             <Cell
                                 key={`cell-${index}`}
                                 fill={COLORS[index % COLORS.length]}
@@ -32,18 +53,19 @@ function DashboardPieChart({ data, total }) {
                         ))}
                     </Pie>
                     <text x="50%"
-                          y="48%"
+                          y="45%"
                           textAnchor="middle"
                           dominantBaseline="middle"
+                          className="font-bold"
                     >
                         ${total.toFixed(2)}
                     </text>
                     <text
                         x="50%"
-                        y="57%"
+                        y="52%"
                         textAnchor="middle"
                         dominantBaseline="middle"
-                        className="text-sm"
+                        className="text-sm font-bold"
                     >
                         Total Spent
                     </text>
