@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import AlertMessage from '../AlertMessage';
 
 function OptionMenu({ selectedExpense, setSelectedExpense, setExpenses, setTotal, setShowModify }) {
     const [successDelete, setSuccessDelete] = useState(false);  // Track whether a deletion was successful or not
@@ -54,7 +55,13 @@ function OptionMenu({ selectedExpense, setSelectedExpense, setExpenses, setTotal
                 <button className="border-2 border-cyan-700 px-3 rounded-lg
                                 hover:bg-cyan-700 hover:text-white hover:cursor-pointer
                                 transition-colors duration-200"
-                        onClick={() => setShowModify(true)}
+                        onClick={() =>{
+                            if (selectedExpense !== null) {
+                                setShowModify(true);
+                            } else {
+                                alert("Select an expense first!")
+                            }
+                        }}
                 >
                     Modify
                 </button>
@@ -66,14 +73,9 @@ function OptionMenu({ selectedExpense, setSelectedExpense, setExpenses, setTotal
                     Delete
                 </button>
                 {/* Displays a success message if the expense was successfully deleted */}
-                <p className={`bg-rose-500 p-2 rounded shadow-lg
-                                fixed top-5 right-5
-                                text-white text-center
-                                transition-opacity duration-500
-                                ${successDelete ? 'opacity-100' : 'opacity-0'}`}
-                >
-                    Expense deleted!
-                </p>
+                {successDelete && (
+                    <AlertMessage message="Successfully deleted!" type="good" />
+                )}
             </div>
         </div>
     )

@@ -12,7 +12,7 @@ const expenses = [
         name: "Groceries",
         amount: 70.00,
         category: "Food",
-        date: "2026-09-12"
+        date: "2026-09-01"
     },
     {
         id: 2,
@@ -93,9 +93,13 @@ app.get('/expenses/category/:category', (req, res) => {
 
 //POST method to add an expense
 app.post('/api/expense', (req, res) => {
+    const newId = expenses.length > 0
+    ? Math.max(...expenses.map(expense => expense.id)) + 1
+    : 1;
+
     // Creates a new expense object using the request body
     const newExpense = {
-        id: expenses.length + 1,
+        id: newId,
         name: req.body.name,
         amount: req.body.amount,
         category: req.body.category,

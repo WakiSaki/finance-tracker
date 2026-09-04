@@ -1,10 +1,10 @@
 import { useState } from 'react';
 
-import DashboardBlock from "./DashboardBlock";
-import DashboardPieChart from "./DashboardPieChart";
-import ExpenseChart from "./ExpenseChart";
+import DashboardBlock from "./dash_components/DashboardBlock";
+import DashboardPieChart from "./dash_components/DashboardPieChart";
+import ExpenseChart from "./dash_components/ExpenseChart";
 
-function Dashboard({ expenses, total, categories }) {
+function Dashboard({ expenses }) {
     const [dateOption, setDateOption] = useState("30days"); // Track what date range to display
 
     const currentDate = new Date();
@@ -32,15 +32,21 @@ function Dashboard({ expenses, total, categories }) {
     // Calculate the total expense amount for expenses within time range
     const timeRangeTotal = expenseRange.reduce((rangeTotal, expense) => {
         rangeTotal += expense.amount;
-
         return rangeTotal;
     }, 0);
 
     // Calculate the largest expense within time range
-    const largestExpense = expenseRange.sort((a, b) => b.amount - a.amount)[0];
+    const largestExpense = expenseRange.length > 0
+        ? expenseRange.reduce((largest, expense) =>
+                expense.amount > largest.amount ? expense : largest,
+            expenseRange[0]
+          )
+        : null;
 
     // Calculate the average expense cost within time range
-    let averageExpenseCost = timeRangeTotal / expenseRange.length;
+    let averageExpenseCost = expenseRange.length > 0 
+        ? timeRangeTotal / expenseRange.length
+        : 0;
 
     // Group expenses by category for other features
     const expensesByCategory = expenseRange.reduce((groups, expense) => {
@@ -84,7 +90,7 @@ function Dashboard({ expenses, total, categories }) {
     );
 
     // Calculate the category with the largest total expense amount
-    const largestCategory = Object.entries(categoryTotals).sort((a, b) => b.amount - a.amount)[0];
+    const largestCategory = Object.entries(categoryTotals).sort((a, b) => b[1] - a[1])[0] ?? null;
 
     return (
         <div className="w-6/7 min-h-fit p-4 mt-4 bg-sky-50 justify-self-center
@@ -108,7 +114,7 @@ function Dashboard({ expenses, total, categories }) {
                 <option value="1year">Past year</option>
                 <option value="2years">Past 2 years</option>
             </select>
-            {expenses.length > 0 ? (
+            {expenseRange.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
                     <DashboardBlock title={"Largest Expense"} amount={`$${largestExpense.amount}`} subtitle={largestExpense.name}/>
                     <DashboardBlock title={"Average Spending"} amount={`$${averageExpenseCost.toFixed(2)}`} />

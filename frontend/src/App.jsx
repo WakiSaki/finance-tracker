@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import Expenses from './Expenses.jsx'
 import AddExpense from './AddExpense.jsx'
-import OptionMenu from './OptionMenu.jsx'
 import Dashboard from './Dashboard.jsx'
 
 function App() {
@@ -40,7 +39,7 @@ function App() {
     >
       <div className="absolute inset-0 bg-black/40"></div>  
       <div className="relative z-10">
-        <Dashboard expenses={expenses} total={total} categories={categories} />
+        <Dashboard expenses={expenses} />
         <Expenses expenses={expenses} total={total} categories={categories}
                   setExpenses={setExpenses} setTotal={setTotal}/>
         <AddExpense expenses={expenses} categories={categories} setExpenses={setExpenses} setTotal={setTotal} />

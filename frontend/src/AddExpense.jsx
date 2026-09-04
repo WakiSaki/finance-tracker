@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import AlertMessage from './AlertMessage';
 
 function AddExpense({ expenses, categories, setExpenses, setTotal }) {
     const [name, setName] = useState("");   // Track name using states
@@ -7,15 +8,15 @@ function AddExpense({ expenses, categories, setExpenses, setTotal }) {
     const [date, setDate] = useState("");
 
     const [success, setSuccess] = useState(false); // Track whether an expense addition was successful
-
-    const categoryList = ["None", ...categories.map(category => category.name)];  // Track what categories exist among expenses
+    const [incomplete, setIncomplete] = useState(false);    // Track whether all fields have been filled out
 
     // Handles the POST request
     const handleSubmit = async (e) => {
         e.preventDefault(); // Prevent the browser from doing the default form submission, which reloads the page
 
         if(!name || !amount || !category || !date) {
-            alert("Please fill out all fields.")
+            setIncomplete(true);
+            setTimeout(() => setIncomplete(false), 4000);
             return;
         }
 
@@ -53,9 +54,7 @@ function AddExpense({ expenses, categories, setExpenses, setTotal }) {
             setTotal(totalData.total);
 
             setSuccess(true);   // Set the success state to true, which can be used to display a success message
-            setTimeout(() => setSuccess(false), 3000);   // Reset the success state to false after 3 seconds, which can be used to hide the success message
-
-            console.log('Expense added');
+            setTimeout(() => setSuccess(false), 4000);   // Reset the success state to false after 3 seconds, which can be used to hide the success message
 
             // Reset the input fields
             setName("");
@@ -72,6 +71,9 @@ function AddExpense({ expenses, categories, setExpenses, setTotal }) {
         <div className="justify-self-center rounded-lg
                         p-12 mb-4 bg-stone-200"
         >
+            {incomplete && (
+                <AlertMessage message="Please fill out all fields" type="bad" />
+            )}
             <p className="place-self-center font-bold text-xl mb-8">
                 Add a New Expense
             </p>
@@ -104,11 +106,12 @@ function AddExpense({ expenses, categories, setExpenses, setTotal }) {
                            onChange={(e) => setCategory(e.target.value)}
                            className="border rounded px-3 py-1 justify-self-end w-full bg-white"
                     >
-                        {categoryList.map(category => (
+                        <option className="text-right" value="">None</option>
+                        {categories.map(category => (
                             <option key={category.id} value={category.name}
                                     className="text-right"
                             >
-                                {category}
+                                {category.name}
                             </option>
                         ))}
                     </select>
@@ -132,15 +135,9 @@ function AddExpense({ expenses, categories, setExpenses, setTotal }) {
                     Add expense
                 </button>
             </form>
-            {/* Display a success message if the expense was successfully added */}
-            <p className={`bg-emerald-500 p-2 rounded shadow-lg
-                            fixed top-5 right-5
-                            text-white text-center
-                            transition-opacity duration-500
-                            ${success ? 'opacity-100' : 'opacity-0'}`}
-            >
-                Expense added!
-            </p>
+            {success && (
+                <AlertMessage message="Expense added!" type="good" />
+            )}
         </div>
     )
 }

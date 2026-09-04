@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import OptionMenu from './OptionMenu';
-import ModifyMenu from './ModifyMenu';
+import OptionMenu from './expenseList_components/OptionMenu';
+import ModifyMenu from './expenseList_components/ModifyMenu';
+import AlertMessage from './AlertMessage';
+import FilterOptions from './expenseList_components/FilterOptions';
 
 function Expenses({ expenses, total, categories, setExpenses, setTotal }) {
     const [selectedExpense, setSelectedExpense] = useState(null); // Track the expenses being displayed
@@ -72,57 +74,14 @@ function Expenses({ expenses, total, categories, setExpenses, setTotal }) {
                 <ModifyMenu categories={categories} selectedExpense={selectedExpense} setShowModify={setShowModify} setExpenses={setExpenses} setTotal={setTotal} setSuccessModify={setSuccessModify}/>
             )}
             {/* Display a success message if the expense was successfully modified */}
-            <p className={`bg-green-500 p-2 rounded shadow-lg
-                            fixed top-5 right-5
-                            text-white text-center
-                            transition-opacity duration-500
-                            ${successModify ? 'opacity-100' : 'opacity-0'}`}
-            >
-                Expense updated!
-            </p>
+            {successModify && (
+                <AlertMessage message="Expense updated!" type="good" />
+            )}
             <h1 className="text-3xl font-bold text-center m-4">
                 Expenses
             </h1>
-            <div className="bg-white max-w-fit justify-self-center px-4
-                            rounded-lg border border-black flex gap-4
-                            items-center
-                            sm:flex-col lg:flex-row"
-            >
-                {/* Category Selector */}
-                <span className="flex flex-col justify-self-center gap-2 py-2 h-full">
-                    <label>Category:</label>
-                    <select value={categoryFilter}
-                            onChange={(e) => {
-                                setCategoryFilter(e.target.value);
-                                setSelectedExpense(null);
-                            }}
-                            className="bg-indigo-50 rounded-lg border border-black"
-                    >
-                        {categoryList.map(category => (
-                            <option key={category.id} value={category.name}
-                                    className="text-right"
-                            >
-                                {category}
-                            </option>
-                        ))}
-                    </select>
-                </span>
-                {/* Sorting Options */}
-                <span className="flex flex-col gap-2 py-2 justify-self-center h-full">
-                    <label>Sort by:</label>
-                    <select value={sortOption}
-                            onChange={(e) => setSortOption(e.target.value)}
-                            className="bg-indigo-50 rounded-lg border border-black"
-                    >
-                        <option className="text-end" value="amount high">Amount (High to Low)</option>
-                        <option className="text-end" value="amount low">Amount: (Low to High)</option>
-                        <option className="text-end" value="date recent">Date (Most Recent)</option>
-                        <option className="text-end" value="date oldest">Date (Oldest)</option>
-                        <option className="text-end" value="a-z">Alphabetical (A-Z)</option>
-                        <option className="text-end" value="z-a">Alphabetical (Z-A)</option>
-                    </select>
-                </span>
-            </div>
+            <FilterOptions categories={categories} categoryFilter={categoryFilter} setCategoryFilter={setCategoryFilter}
+                           sortOption={sortOption} setSortOption={setSortOption} setSelectedExpense={setSelectedExpense} />
             <div className="relative z-10 border-2 border-black w-2/3 justify-self-center
                             grid grid-cols-4 m-2 bg-white"
             >

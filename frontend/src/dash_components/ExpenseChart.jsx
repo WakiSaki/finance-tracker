@@ -47,6 +47,7 @@ function ExpenseChart({ data }) {
                     <XAxis dataKey="formattedDate" 
                            tickLine={false}
                            axisLine={false}
+                           tickMargin={10}
                     />
                     <YAxis tickFormatter={(value) => `$${value.toLocaleString()}`}
                            tickLine={false}

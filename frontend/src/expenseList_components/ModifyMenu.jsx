@@ -32,7 +32,7 @@ function ModifyMenu({ categories, selectedExpense, setShowModify, setExpenses, s
         if(response.ok) {
             setShowModify(false);   // Hide modify menu
             setSuccessModify(true); // Show alert message for successful modification
-            setTimeout(() => setSuccessModify(false), 3000);    // Hide success alert after 3 seconds
+            setTimeout(() => setSuccessModify(false), 4000);    // Hide success alert after 3 seconds
 
             // Update expense list to display new list to UI
             const expenseList = await fetch("http://localhost:3000/expenses");  // Fetch the updated list of expenses from the backend
