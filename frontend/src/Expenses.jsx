@@ -17,24 +17,19 @@ function Expenses({ expenses, total, categories, setExpenses, setTotal }) {
         : expenses.filter(expense => expense.category === categoryFilter)
 
     // Sort the expenses based on which option is selected
+    const sortFunctions = {
+        "amount high": (a, b) => b.amount - a.amount,
+        "amount low": (a, b) => a.amount - b.amount,
+        "date recent": (a, b) => new Date(b.date) - new Date(a.date),
+        "date oldest": (a, b) => new Date(a.date) - new Date(b.date),
+        "a-z": (a, b) => a.name.localeCompare(b.name),
+        "z-a": (a, b) => b.name.localeCompare(a.name)
+    };
+
     const sortedExpenses = [...filteredExpenses];
-    if(sortOption === "amount high") {  // Sort from highest to lowest amount
-        sortedExpenses.sort((a,b) => b.amount - a.amount);
-    }
-    if(sortOption === "amount low") {   // Sort from lowest to highest amount
-        sortedExpenses.sort((a,b) => a.amount - b.amount);
-    }
-    if(sortOption === "date recent") {  // Sort from most recent to oldest
-        sortedExpenses.sort((a, b) => new Date(b.date) - new Date(a.date));
-    }
-    if(sortOption === "date oldest") {  // Sort from oldest to most recent
-        sortedExpenses.sort((a, b) => new Date(a.date) - new Date(b.date));
-    }
-    if(sortOption === "a-z") {  // Sort from A-Z
-        sortedExpenses.sort((a,b) => a.name.localeCompare(b.name));
-    }
-    if(sortOption === "z-a") {  // Sort from Z-A
-        sortedExpenses.sort((a,b) => b.name.localeCompare(a.name));
+
+    if(sortFunctions[sortOption]) {
+        sortedExpenses.sort(sortFunctions[sortOption]);
     }
 
     // Format date into 'Month. Day, Year'
