@@ -11,17 +11,14 @@ function Dashboard({ expenses }) {
     const timeRange = new Date(currentDate);
 
     // Set the time range according to date option selected
-    if(dateOption === "30days") {
-        timeRange.setDate(currentDate.getDate() - 30);
-    } else if(dateOption === "3months") {
-        timeRange.setDate(currentDate.getDate() - 90);
-    } else if(dateOption === "6months") {
-        timeRange.setDate(currentDate.getDate() - 180);
-    } else if(dateOption === "1year") {
-        timeRange.setDate(currentDate.getDate() - 365);
-    } else if(dateOption === "2years") {
-        timeRange.setDate(currentDate.getDate() - (365 * 2));
+    const dateRange = {
+        "30days": currentDate.getDate() - 30,
+        "3months": currentDate.getDate() - 90,
+        "6months": currentDate.getDate() - 180,
+        "1year": currentDate.getDate() - 365,
+        "2years": currentDate.getDate() - (365 * 2)
     }
+    timeRange.setDate(dateRange[dateOption]);
 
     // Filter expenses based on date range
     const expenseRange = expenses.filter((expense) => {
