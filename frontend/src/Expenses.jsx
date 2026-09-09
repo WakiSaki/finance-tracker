@@ -96,10 +96,10 @@ function Expenses({ expenses, total, categories, setExpenses, setTotal }) {
                                 ${selectedExpense?.id === expense.id ? "bg-gray-200" : ""}`}
                     >
                         <p className="text-center p-2 h-full flex items-center justify-center">
-                            {expense.name}
+                            {expense.expense_name}
                         </p>
                         <p className="text-center p-2 h-full flex items-center justify-center">
-                            {formatExpenseDate(expense.date)}
+                            {formatExpenseDate(expense.expense_date)}
                         </p>
                         <p className="text-center p-2 h-full flex items-center justify-center">
                             {expense.category}

@@ -9,33 +9,17 @@ function ExpenseChart({ data }) {
         const date = new Date(year, monthNumber - 1, day);
 
         return date.toLocaleDateString("en-US", {
-            month: "long",
+            month: "short",
             day: "2-digit",
             year: "numeric"
         });
     };
 
-    // Calculate the total amount spent for each date
-    const dailyTotals = Object.entries(data).reduce(
-        (totals, [date, expenses]) => {
-            totals[date] = expenses.reduce(
-                (total, expense) => total + expense.amount,
-                0
-            );
-
-            return totals;
-        },
-        {}
-    );
-
     // Converts total data into data for chart
-    const chartData = Object.entries(dailyTotals)
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([date, total]) => ({
-            date,
-            formattedDate: formatDate(date),
-            total
-        }));
+    const chartData = data.map(entry => ({
+        formattedDate: formatDate(entry.date),
+        total: Number(entry.total)
+    }));
 
     return (
         <div className="w-1/2 h-75">

@@ -1,93 +1,64 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import DashboardBlock from "./dash_components/DashboardBlock";
 import DashboardPieChart from "./dash_components/DashboardPieChart";
 import ExpenseChart from "./dash_components/ExpenseChart";
 
-function Dashboard({ expenses }) {
+function Dashboard() {
     const [dateOption, setDateOption] = useState("30days"); // Track what date range to display
+    const [expenseRange, setExpenseRange] = useState([]);   // Track the expenses within date range
+    const [timeRangeTotal, setTimeRangeTotal] = useState(0);    // Track the total expense amount within date range
+    const [timeRangeAverage, setTimeRangeAverage] = useState(0);    // Track the average expense amount within date range
+    const [largestExpense, setLargestExpense] = useState(null); // Track the largest expense within date range
+    const [largestCategory, setLargestCategory] = useState(null);   // Track the largest category amount within date range
+    const [categoryTotals, setCategoryTotals] = useState([]);   // Track the totals per category within date range
+    const [dailySpending, setDailySpending] = useState([]); // Track the spending per day within date range
 
-    const currentDate = new Date();
-    const timeRange = new Date(currentDate);
-
-    // Set the time range according to date option selected
-    const dateRange = {
-        "30days": currentDate.getDate() - 30,
-        "3months": currentDate.getDate() - 90,
-        "6months": currentDate.getDate() - 180,
-        "1year": currentDate.getDate() - 365,
-        "2years": currentDate.getDate() - (365 * 2)
-    }
-    timeRange.setDate(dateRange[dateOption]);
-
-    // Filter expenses based on date range
-    const expenseRange = expenses.filter((expense) => {
-        const expenseDate = new Date(expense.date);
-        return expenseDate >= timeRange && expenseDate <= currentDate;
-    });
-
-    // Calculate the total expense amount for expenses within time range
-    const timeRangeTotal = expenseRange.reduce((rangeTotal, expense) => {
-        rangeTotal += expense.amount;
-        return rangeTotal;
-    }, 0);
-
-    // Calculate the largest expense within time range
-    const largestExpense = expenseRange.length > 0
-        ? expenseRange.reduce((largest, expense) =>
-                expense.amount > largest.amount ? expense : largest,
-            expenseRange[0]
-          )
-        : null;
-
-    // Calculate the average expense cost within time range
-    let averageExpenseCost = expenseRange.length > 0 
-        ? timeRangeTotal / expenseRange.length
-        : 0;
-
-    // Group expenses by category for other features
-    const expensesByCategory = expenseRange.reduce((groups, expense) => {
-        const category = expense.category;
-
-        // Execute if category has not been encountered yet
-        if(!groups[category]) {
-            groups[category] = [];
-        }
-
-        groups[category].push(expense);
-
-        return groups;
-    }, {});
-
-    // Group expenses by date for other features
-    const expensesByDate = expenseRange.reduce((groups, expense) => {
-       const date = expense.date;
-       
-       // Execute if date has not been encountered yet
-       if(!groups[date]) {
-        groups[date] = [];
-       }
-
-        groups[date].push(expense);
-
-        return groups;
-    }, {});
-
-    // Calculate the total expense amounts for each category
-    const categoryTotals = Object.entries(expensesByCategory).reduce(
-        (totals, [category, expenses]) => {
-            totals[category] = expenses.reduce(
-                (total, expense) => total + expense.amount,
-                0
-            );
-
-            return totals;
-        },
-        {}
-    );
-
-    // Calculate the category with the largest total expense amount
-    const largestCategory = Object.entries(categoryTotals).sort((a, b) => b[1] - a[1])[0] ?? null;
+    // Request expense data based on date range selected
+    useEffect(() => {
+        // Get all expenses from database
+        fetch(`http://localhost:3000/dashboard?range=${dateOption}`)
+            .then(response => response.json())
+            .then(data => {
+                setExpenseRange(data);
+            });
+        // Get expense total from database
+        fetch(`http://localhost:3000/dashboard/total?range=${dateOption}`)
+            .then(response => response.json())
+            .then(data => {
+                setTimeRangeTotal(Number(data.total));
+            });
+        // Get average expense amount from database
+        fetch(`http://localhost:3000/dashboard/average?range=${dateOption}`)
+            .then(response => response.json())
+            .then(data => {
+                setTimeRangeAverage(Number(data.average));
+            });
+        // Get largest expense from database
+        fetch(`http://localhost:3000/dashboard/largest?range=${dateOption}`)
+            .then(response => response.json())
+            .then(data => {
+                setLargestExpense(data);
+            });
+        // Get largest category amount from database
+        fetch(`http://localhost:3000/dashboard/largest-category?range=${dateOption}`)
+            .then(response => response.json())
+            .then(data => {
+                setLargestCategory(data);
+            });
+        // Get totals for each category in database
+        fetch(`http://localhost:3000/dashboard/categories?range=${dateOption}`)
+            .then(response => response.json())
+            .then(data => {
+                setCategoryTotals(data);
+            });
+        // Get daily totals from database
+        fetch(`http://localhost:3000/dashboard/daily?range=${dateOption}`)
+            .then(response => response.json())
+            .then(data => {
+                setDailySpending(data);
+        });
+    }, [dateOption]);
 
     return (
         <div className="w-6/7 min-h-fit p-4 mt-4 bg-sky-50 justify-self-center
@@ -111,19 +82,19 @@ function Dashboard({ expenses }) {
                 <option value="1year">Past year</option>
                 <option value="2years">Past 2 years</option>
             </select>
-            {expenseRange.length > 0 ? (
+            {expenseRange.length > 0 && largestExpense && largestCategory ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-                    <DashboardBlock title={"Largest Expense"} amount={`$${largestExpense.amount}`} subtitle={largestExpense.name}/>
-                    <DashboardBlock title={"Average Spending"} amount={`$${averageExpenseCost.toFixed(2)}`} />
+                    <DashboardBlock title={"Largest Expense"} amount={`$${largestExpense.amount}`} subtitle={largestExpense.expense_name}/>
+                    <DashboardBlock title={"Average Spending"} amount={`$${timeRangeAverage.toFixed(2)}`} />
                     <DashboardBlock title={"Number of Expenses"} amount={expenseRange.length} />
-                    <DashboardBlock title={"Highest Category"} amount={`$${largestCategory[1]}`} subtitle={largestCategory[0]} />
+                    <DashboardBlock title={"Highest Category"} amount={`$${Number(largestCategory.total).toFixed(2)}`} subtitle={largestCategory.category} />
                 </div>
             ) : (
                 <p>No expenses available...</p>
             )}
             <div className="flex flex-row gap-4 w-full items-center pb-8">
-                <DashboardPieChart data={expensesByCategory} total={timeRangeTotal}/>
-                <ExpenseChart data={expensesByDate} />
+                <DashboardPieChart data={categoryTotals} total={timeRangeTotal}/>
+                <ExpenseChart data={dailySpending} />
             </div>
         </div>
     );
