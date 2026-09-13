@@ -16,48 +16,38 @@ function Dashboard() {
 
     // Request expense data based on date range selected
     useEffect(() => {
-        // Get all expenses from database
-        fetch(`http://localhost:3000/dashboard?range=${dateOption}`)
-            .then(response => response.json())
-            .then(data => {
-                setExpenseRange(data);
-            });
-        // Get expense total from database
-        fetch(`http://localhost:3000/dashboard/total?range=${dateOption}`)
-            .then(response => response.json())
-            .then(data => {
-                setTimeRangeTotal(Number(data.total));
-            });
-        // Get average expense amount from database
-        fetch(`http://localhost:3000/dashboard/average?range=${dateOption}`)
-            .then(response => response.json())
-            .then(data => {
-                setTimeRangeAverage(Number(data.average));
-            });
-        // Get largest expense from database
-        fetch(`http://localhost:3000/dashboard/largest?range=${dateOption}`)
-            .then(response => response.json())
-            .then(data => {
-                setLargestExpense(data);
-            });
-        // Get largest category amount from database
-        fetch(`http://localhost:3000/dashboard/largest-category?range=${dateOption}`)
-            .then(response => response.json())
-            .then(data => {
-                setLargestCategory(data);
-            });
-        // Get totals for each category in database
-        fetch(`http://localhost:3000/dashboard/categories?range=${dateOption}`)
-            .then(response => response.json())
-            .then(data => {
-                setCategoryTotals(data);
-            });
-        // Get daily totals from database
-        fetch(`http://localhost:3000/dashboard/daily?range=${dateOption}`)
-            .then(response => response.json())
-            .then(data => {
-                setDailySpending(data);
-        });
+        const controller = new AbortController();
+
+        async function loadDashboard() {
+            try {
+                const response = await fetch(
+                    `http://localhost:3000/dashboard?range=${dateOption}`,
+                    { signal: controller.signal }
+                );
+
+                if (!response.ok) {
+                    throw new Error("Could not load dashboard data");
+                }
+
+                const data = await response.json();
+
+                setExpenseRange(data.expenses);
+                setTimeRangeTotal(data.total);
+                setTimeRangeAverage(data.average);
+                setLargestExpense(data.largestExpense);
+                setLargestCategory(data.largestCategory);
+                setCategoryTotals(data.categoryTotals);
+                setDailySpending(data.dailySpending);
+            } catch (error) {
+                if (error.name !== "AbortError") {
+                    console.error(error);
+                }
+            }
+        }
+
+        loadDashboard();
+
+        return () => controller.abort();
     }, [dateOption]);
 
     return (

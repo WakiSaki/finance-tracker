@@ -62,241 +62,94 @@ app.get('/expenses', async (req, res) => {
     }
 });
 
-// GET method to get expenses within date range for dashboard
+// GET method for all dashboard data within a date range
 app.get('/dashboard', async (req, res) => {
-    const { range } = req.query;
+    const interval = getDateInterval(req.query.range);
 
-    const interval = getDateInterval(range);
-
-    if(!interval) {
-        return res.status(400).json({
-            error: "Invalid date range"
-        });
+    if (!interval) {
+        return res.status(400).json({ error: "Invalid date range" });
     }
 
     try {
         const result = await pool.query(
             `
-            SELECT * FROM expenses
-            WHERE expense_date >= CURRENT_DATE - $1::interval
-                AND expense_date <= CURRENT_DATE;
+            WITH filtered_expenses AS (
+                SELECT id, expense_name, amount, category, expense_date
+                FROM expenses
+                WHERE expense_date >= CURRENT_DATE - $1::interval
+                  AND expense_date <= CURRENT_DATE
+            ),
+            category_totals AS (
+                SELECT category, SUM(amount) AS total
+                FROM filtered_expenses
+                GROUP BY category
+            ),
+            daily_totals AS (
+                SELECT expense_date::text AS date, SUM(amount) AS total
+                FROM filtered_expenses
+                GROUP BY expense_date
+            )
+            SELECT
+                COALESCE(
+                    (
+                        SELECT json_agg(expense ORDER BY expense.expense_date DESC)
+                        FROM (
+                            SELECT id, expense_name, amount, category,
+                                   expense_date::text AS expense_date
+                            FROM filtered_expenses
+                        ) AS expense
+                    ),
+                    '[]'::json
+                ) AS expenses,
+                COALESCE((SELECT SUM(amount) FROM filtered_expenses), 0) AS total,
+                COALESCE((SELECT AVG(amount) FROM filtered_expenses), 0) AS average,
+                (
+                    SELECT row_to_json(largest_expense)
+                    FROM (
+                        SELECT id, expense_name, amount, category,
+                               expense_date::text AS expense_date
+                        FROM filtered_expenses
+                        ORDER BY amount DESC
+                        LIMIT 1
+                    ) AS largest_expense
+                ) AS largest_expense,
+                (
+                    SELECT row_to_json(largest_category)
+                    FROM (
+                        SELECT category, total
+                        FROM category_totals
+                        ORDER BY total DESC
+                        LIMIT 1
+                    ) AS largest_category
+                ) AS largest_category,
+                COALESCE(
+                    (SELECT json_agg(category_totals ORDER BY category)
+                     FROM category_totals),
+                    '[]'::json
+                ) AS category_totals,
+                COALESCE(
+                    (SELECT json_agg(daily_totals ORDER BY date)
+                     FROM daily_totals),
+                    '[]'::json
+                ) AS daily_spending;
             `,
             [interval]
         );
 
-        res.json(result.rows);
-    } catch(error) {
+        const dashboard = result.rows[0];
+
+        res.json({
+            expenses: dashboard.expenses,
+            total: Number(dashboard.total),
+            average: Number(dashboard.average),
+            largestExpense: dashboard.largest_expense,
+            largestCategory: dashboard.largest_category,
+            categoryTotals: dashboard.category_totals,
+            dailySpending: dashboard.daily_spending
+        });
+    } catch (error) {
         console.error(error);
-        res.status(500).json({
-            error: "Failed to retrieve dashboard expenses"
-        });
-    }
-});
-
-// GET method for expense total within date range
-app.get("/dashboard/total", async (req, res) => {
-    const { range } = req.query;
-
-    const interval = getDateInterval(range);
-
-    if(!interval) {
-        return res.status(400).json({
-            error: "Invalid date range"
-        });
-    }
-
-    try{
-        const result = await pool.query(
-            `
-            SELECT COALESCE(SUM(amount), 0) AS total
-            FROM expenses
-            WHERE expense_date >= CURRENT_DATE - $1::interval
-                AND expense_date <= CURRENT_DATE;
-            `,
-            [interval]
-        );
-
-        res.json(result.rows[0]);
-    } catch(error) {
-        console.error(error);
-
-        res.status(500).json({
-            error: "Failed to calculate total"
-        });
-    }
-});
-
-// GET method for average expense amount for dashboard
-app.get("/dashboard/average", async (req, res) => {
-    const { range } = req.query;
-
-    const interval = getDateInterval(range);
-
-    if(!interval) {
-        return res.status(400).json({
-            error: "Invalid date range"
-        });
-    }
-
-    try{
-        const result = await pool.query(
-            `
-            SELECT COALESCE(AVG(amount), 0) AS average
-            FROM expenses
-            WHERE expense_date >= CURRENT_DATE - $1::interval
-                AND expense_date <= CURRENT_DATE;
-            `,
-            [interval]
-        );
-
-        res.json(result.rows[0]);
-    } catch(error) {
-        console.error(error);
-
-        res.status(500).json({
-            error: "Failed to calculate average"
-        });
-    }
-});
-
-// GET method for largest expense in date range
-app.get("/dashboard/largest", async (req, res) => {
-    const { range } = req.query;
-
-    const interval = getDateInterval(range);
-
-    if(!interval) {
-        return res.status(400).json({
-            error: "Invalid date range"
-        });
-    }
-
-    try{
-        const result = await pool.query(
-            `
-            SELECT *
-            FROM expenses
-            WHERE expense_date >= CURRENT_DATE - $1::interval
-                AND expense_date <= CURRENT_DATE
-            ORDER BY amount DESC
-            LIMIT 1;
-            `,
-            [interval]
-        );
-
-        res.json(result.rows[0]);
-    } catch(error) {
-        console.error(error);
-
-        res.status(500).json({
-            error: "Failed to calculate largest expense"
-        });
-    }
-});
-
-// GET method for largest category amount in date range
-app.get("/dashboard/largest-category", async (req, res) => {
-    const { range } = req.query;
-
-    const interval = getDateInterval(range);
-
-    if(!interval) {
-        return res.status(400).json({
-            error: "Invalid date range"
-        });
-    }
-
-    try{
-        const result = await pool.query(
-            `
-            SELECT category, SUM(amount) AS total
-            FROM expenses
-            WHERE expense_date >= CURRENT_DATE - $1::interval
-                AND expense_date <= CURRENT_DATE
-            GROUP BY category
-            ORDER BY total DESC
-            LIMIT 1;
-            `,
-            [interval]
-        );
-
-        res.json(result.rows[0] ?? null);
-    } catch(error) {
-        console.error(error);
-
-        res.status(500).json({
-            error: "Failed to calculate largest category"
-        });
-    }
-});
-
-// GET method for totals per categories in date range
-app.get("/dashboard/categories", async (req, res) => {
-    const { range } = req.query;
-
-    const interval = getDateInterval(range);
-
-    if(!interval) {
-        return res.status(400).json({
-            error: "Invalid date range"
-        });
-    }
-
-    try{
-        const result = await pool.query(
-            `
-            SELECT category, SUM(amount) AS total
-            FROM expenses
-            WHERE expense_date >= CURRENT_DATE - $1::interval
-                AND expense_date <= CURRENT_DATE
-            GROUP BY category
-            ORDER BY category;
-            `,
-            [interval]
-        );
-
-        res.json(result.rows);
-    } catch(error) {
-        console.error(error);
-
-        res.status(500).json({
-            error: "Failed to calculate category totals"
-        });
-    }
-});
-
-// GET method for total amount per day in date range
-app.get("/dashboard/daily", async (req, res) => {
-    const { range } = req.query;
-
-    const interval = getDateInterval(range);
-
-    if(!interval) {
-        return res.status(400).json({
-            error: "Invalid date range"
-        });
-    }
-
-    try{
-        const result = await pool.query(
-            `
-            SELECT expense_date::text AS date, SUM(amount) AS total
-            FROM expenses
-            WHERE expense_date >= CURRENT_DATE - $1::interval
-                AND expense_date <= CURRENT_DATE
-            GROUP BY expense_date
-            ORDER BY expense_date;
-            `,
-            [interval]
-        );
-
-        res.json(result.rows);
-    } catch(error) {
-        console.error(error);
-
-        res.status(500).json({
-            error: "Failed to calculate daily spending"
-        });
+        res.status(500).json({ error: "Failed to retrieve dashboard data" });
     }
 });
 
