@@ -9,7 +9,7 @@ function App() {
   const [categories, setCategories] = useState([]); // Track what categories are currently in use
 
   useEffect(() => {
-        fetch("http://localhost:3000/expenses") // Fetch the list of expenses from the backend
+        fetch("http://localhost:3000/api/expenses") // Fetch the list of expenses from the backend
             .then((response) => response.json())  // Convert the response to JSON
             .then((data) => { // Update the expenses state with the fetched data
                 setExpenses(data);
@@ -40,8 +40,8 @@ function App() {
       <div className="absolute inset-0 bg-black/40"></div>  
       <div className="relative z-10">
         <Dashboard />
-        {/* <Expenses expenses={expenses} total={total} categories={categories}
-                  setExpenses={setExpenses} setTotal={setTotal}/> */}
+        <Expenses expenses={expenses} total={total} categories={categories}
+                  setExpenses={setExpenses} setTotal={setTotal}/>
         <AddExpense expenses={expenses} categories={categories} setExpenses={setExpenses} setTotal={setTotal} />
       </div>
     </div>

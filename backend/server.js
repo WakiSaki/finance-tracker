@@ -62,6 +62,27 @@ app.get('/expenses', async (req, res) => {
     }
 });
 
+// GET method for expenses displayed in the expense list
+app.get('/api/expenses', async (_req, res) => {
+    try {
+        const { rows } = await pool.query(`
+            SELECT
+                id,
+                expense_name AS name,
+                amount::float AS amount,
+                category,
+                expense_date::text AS date
+            FROM expenses
+            ORDER BY expense_date DESC, id DESC
+        `);
+
+        res.json(rows);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Failed to retrieve expenses" });
+    }
+});
+
 // GET method for all dashboard data within a date range
 app.get('/dashboard', async (req, res) => {
     const interval = getDateInterval(req.query.range);

@@ -35,7 +35,7 @@ function ModifyMenu({ categories, selectedExpense, setShowModify, setExpenses, s
             setTimeout(() => setSuccessModify(false), 4000);    // Hide success alert after 3 seconds
 
             // Update expense list to display new list to UI
-            const expenseList = await fetch("http://localhost:3000/expenses");  // Fetch the updated list of expenses from the backend
+            const expenseList = await fetch("http://localhost:3000/api/expenses");  // Fetch the updated list of expenses from the backend
             const expenseData = await expenseList.json();   // Convert the response to JSON
             setExpenses(expenseData);   // Update the expenses state in the App component with the new list of expenses
 

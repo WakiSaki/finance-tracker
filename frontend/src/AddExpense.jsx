@@ -44,7 +44,7 @@ function AddExpense({ expenses, categories, setExpenses, setTotal }) {
             }
 
             // Update expense list to display new list to UI
-            const expenseList = await fetch("http://localhost:3000/expenses");  // Fetches the updated list of expenses from the backend
+            const expenseList = await fetch("http://localhost:3000/api/expenses");  // Fetches the updated list of expenses from the backend
             const expenseData = await expenseList.json();   // Converts the response to JSON
             setExpenses(expenseData);   // Updates the expenses state in the App component with the new list of expenses
 
