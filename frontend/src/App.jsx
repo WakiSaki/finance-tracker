@@ -7,6 +7,7 @@ function App() {
   const [expenses, setExpenses] = useState([]); // Track expenses using states
   const [total, setTotal] = useState(0);  // Track total of expense amounts using states
   const [categories, setCategories] = useState([]); // Track what categories are currently in use
+  const [dashboardVersion, setDashboardVersion] = useState(0);
 
   useEffect(() => {
         fetch("http://localhost:3000/api/expenses") // Fetch the list of expenses from the backend
@@ -39,10 +40,10 @@ function App() {
     >
       <div className="absolute inset-0 bg-black/40"></div>  
       <div className="relative z-10">
-        <Dashboard />
+        <Dashboard refreshKey={dashboardVersion} />
         <Expenses expenses={expenses} total={total} categories={categories}
-                  setExpenses={setExpenses} setTotal={setTotal}/>
-        <AddExpense expenses={expenses} categories={categories} setExpenses={setExpenses} setTotal={setTotal} />
+                  setExpenses={setExpenses} setTotal={setTotal} setDashboardVersion={setDashboardVersion}/>
+        <AddExpense categories={categories} setExpenses={setExpenses} setTotal={setTotal} setDashboardVersion={setDashboardVersion} />
       </div>
     </div>
   )

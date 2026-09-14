@@ -4,7 +4,7 @@ import DashboardBlock from "./dash_components/DashboardBlock";
 import DashboardPieChart from "./dash_components/DashboardPieChart";
 import ExpenseChart from "./dash_components/ExpenseChart";
 
-function Dashboard() {
+function Dashboard({ refreshKey }) {
     const [dateOption, setDateOption] = useState("30days"); // Track what date range to display
     const [expenseRange, setExpenseRange] = useState([]);   // Track the expenses within date range
     const [timeRangeTotal, setTimeRangeTotal] = useState(0);    // Track the total expense amount within date range
@@ -48,7 +48,7 @@ function Dashboard() {
         loadDashboard();
 
         return () => controller.abort();
-    }, [dateOption]);
+    }, [dateOption, refreshKey]);
 
     return (
         <div className="w-6/7 min-h-fit p-4 mt-4 bg-sky-50 justify-self-center

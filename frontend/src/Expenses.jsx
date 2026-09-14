@@ -4,7 +4,7 @@ import ModifyMenu from './expenseList_components/ModifyMenu';
 import AlertMessage from './AlertMessage';
 import FilterOptions from './expenseList_components/FilterOptions';
 
-function Expenses({ expenses, total, categories, setExpenses, setTotal }) {
+function Expenses({ expenses, total, categories, setExpenses, setTotal, setDashboardVersion }) {
     const [selectedExpense, setSelectedExpense] = useState(null); // Track the expenses being displayed
     const [showModify, setShowModify] = useState(false);    // Track whether the modify screen should be displayed or not
     const [successModify, setSuccessModify] = useState(false);  // Track whether to show successful modification alert or not
@@ -66,7 +66,7 @@ function Expenses({ expenses, total, categories, setExpenses, setTotal }) {
                         rounded-lg"
         >
             {showModify && (
-                <ModifyMenu categories={categories} selectedExpense={selectedExpense} setShowModify={setShowModify} setExpenses={setExpenses} setTotal={setTotal} setSuccessModify={setSuccessModify}/>
+                <ModifyMenu categories={categories} selectedExpense={selectedExpense} setShowModify={setShowModify} setExpenses={setExpenses} setTotal={setTotal} setSuccessModify={setSuccessModify} setDashboardVersion={setDashboardVersion}/>
             )}
             {/* Display a success message if the expense was successfully modified */}
             {successModify && (
@@ -111,7 +111,7 @@ function Expenses({ expenses, total, categories, setExpenses, setTotal }) {
                 ))}
             </div>
             <OptionMenu selectedExpense={selectedExpense} setSelectedExpense={setSelectedExpense} 
-                        setExpenses={setExpenses} setTotal={setTotal} setShowModify={setShowModify}/>
+                        setExpenses={setExpenses} setTotal={setTotal} setShowModify={setShowModify} setDashboardVersion={setDashboardVersion}/>
         </div>
     )
 }

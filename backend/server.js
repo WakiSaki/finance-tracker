@@ -219,69 +219,139 @@ app.get('/expenses/category/:category', (req, res) => {
     res.json(expense);
 });
 
-//POST method to add an expense
-app.post('/api/expense', (req, res) => {
-    const newId = expenses.length > 0
-    ? Math.max(...expenses.map(expense => expense.id)) + 1
-    : 1;
+// POST method to add an expense
+app.post('/api/expense', async (req, res) => {
+    const { name, amount, category, date } = req.body;
+    const numericAmount = Number(amount);
 
-    // Creates a new expense object using the request body
-    const newExpense = {
-        id: newId,
-        name: req.body.name,
-        amount: req.body.amount,
-        category: req.body.category,
-        date: req.body.date
-    };
-
-    // Validates amount
-    if(newExpense.amount < 0) {
-        res.status(400).json({
-            message: "Amount must be a positive number"
+    if (
+        typeof name !== 'string' || !name.trim() ||
+        typeof category !== 'string' || !category.trim() ||
+        typeof date !== 'string' || !date ||
+        amount === '' || !Number.isFinite(numericAmount) || numericAmount < 0
+    ) {
+        return res.status(400).json({
+            message: 'Name, amount, category, and date are required. Amount must be non-negative.'
         });
     }
 
-    // Pushes the new expense 
-    expenses.push(newExpense);
-    res.status(201).json(newExpense);
+    try {
+        const { rows } = await pool.query(
+            `
+            INSERT INTO expenses (expense_name, amount, category, expense_date)
+            VALUES ($1, $2, $3, $4)
+            RETURNING
+                id,
+                expense_name AS name,
+                amount::float AS amount,
+                category,
+                expense_date::text AS date
+            `,
+            [name.trim(), numericAmount, category.trim(), date]
+        );
+
+        const totalResult = await pool.query(
+            'SELECT COALESCE(SUM(amount), 0)::float AS total FROM expenses'
+        );
+
+        res.status(201).json({
+            expense: rows[0],
+            total: totalResult.rows[0].total
+        });
+    } catch (error) {
+        console.error('Failed to create expense:', error);
+        res.status(500).json({ message: 'Failed to create expense' });
+    }
 });
 
 // PUT method to update an expense
-app.put('/expenses/:id', (req, res) => {
+app.put('/expenses/:id', async (req, res) => {
     const id = Number(req.params.id);
+    const { name, amount, category, date } = req.body;
+    const numericAmount = Number(amount);
 
-    const expense = expenses.find(expense => expense.id === id);
+    if (!Number.isInteger(id) || id < 1) {
+        return res.status(400).json({ message: 'Invalid expense ID' });
+    }
 
-    if(!expense) {
-        return res.status(404).json({
-            message: "Expense not found"
+    if (
+        typeof name !== 'string' || !name.trim() ||
+        typeof category !== 'string' || !category.trim() ||
+        typeof date !== 'string' || !date ||
+        amount === '' || !Number.isFinite(numericAmount) || numericAmount < 0
+    ) {
+        return res.status(400).json({
+            message: 'Name, amount, category, and date are required. Amount must be non-negative.'
         });
     }
 
-    expense.name = req.body.name;
-    expense.amount = req.body.amount;
-    expense.category = req.body.category;
-    expense.date = req.body.date;
+    try {
+        const { rows } = await pool.query(
+            `
+            UPDATE expenses
+            SET expense_name = $1, amount = $2, category = $3, expense_date = $4
+            WHERE id = $5
+            RETURNING
+                id,
+                expense_name AS name,
+                amount::float AS amount,
+                category,
+                expense_date::text AS date
+            `,
+            [name.trim(), numericAmount, category.trim(), date, id]
+        );
 
-    res.json(expense);
+        if (!rows[0]) {
+            return res.status(404).json({ message: 'Expense not found' });
+        }
+
+        const totalResult = await pool.query(
+            'SELECT COALESCE(SUM(amount), 0)::float AS total FROM expenses'
+        );
+
+        res.json({ expense: rows[0], total: totalResult.rows[0].total });
+    } catch (error) {
+        console.error('Failed to update expense:', error);
+        res.status(500).json({ message: 'Failed to update expense' });
+    }
 });
 
 // DELETE method to delete an expense
-app.delete('/expenses/:id', (req, res) => {
-    const id = Number(req.params.id);   // The ID of the expense to delete
+app.delete('/expenses/:id', async (req, res) => {
+    const id = Number(req.params.id);
 
-    const index = expenses.findIndex(expense => expense.id === id); // Finds the index of the expense to be deleted
-
-    // Returns a 404 error if index is not found for expense
-    if(index === -1) {
-        return res.status(404).json({
-            message: "Expense not found"
-        });
+    if (!Number.isInteger(id) || id < 1) {
+        return res.status(400).json({ message: 'Invalid expense ID' });
     }
 
-    // Splices the expense from the array and puts it in deletedExpense
-    const deletedExpense = expenses.splice(index, 1);
-    res.json(deletedExpense[0]);
+    try {
+        const { rows } = await pool.query(
+            `
+            DELETE FROM expenses
+            WHERE id = $1
+            RETURNING
+                id,
+                expense_name AS name,
+                amount::float AS amount,
+                category,
+                expense_date::text AS date
+            `,
+            [id]
+        );
+
+        if (!rows[0]) {
+            return res.status(404).json({ message: 'Expense not found' });
+        }
+
+        const totalResult = await pool.query(
+            'SELECT COALESCE(SUM(amount), 0)::float AS total FROM expenses'
+        );
+
+        res.json({ expense: rows[0], total: totalResult.rows[0].total });
+    } catch (error) {
+        console.error('Failed to delete expense:', error);
+        res.status(500).json({ message: 'Failed to delete expense' });
+    }
 });
 
 // Starts the server

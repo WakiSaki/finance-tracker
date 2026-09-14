@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import AlertMessage from '../AlertMessage';
 
-function OptionMenu({ selectedExpense, setSelectedExpense, setExpenses, setTotal, setShowModify }) {
+function OptionMenu({ selectedExpense, setSelectedExpense, setExpenses, setTotal, setShowModify, setDashboardVersion }) {
     const [successDelete, setSuccessDelete] = useState(false);  // Track whether a deletion was successful or not
 
     // Handle deletion when the delete button is pressed
@@ -11,6 +11,8 @@ function OptionMenu({ selectedExpense, setSelectedExpense, setExpenses, setTotal
                 const response = await fetch(`http://localhost:3000/expenses/${selectedExpense.id}`, {
                     method: 'DELETE',
                 }); // DELETE request made to the backend using the selectedExpense ID
+
+                const data = await response.json();
 
                 // Only updates the frontend if the backend confirms the deletion of the expense
                 if(response.ok) {
@@ -28,13 +30,11 @@ function OptionMenu({ selectedExpense, setSelectedExpense, setExpenses, setTotal
                     //Set the currently selected expense back to null (i.e. none)
                     setSelectedExpense(null);
 
-                    // Update the displayed total from the backend response
-                    const totalResponse = await fetch("http://localhost:3000/expenses/total");  // Fetch the updated total from the backend
-                    const totalData = await totalResponse.json();   // Convert the response to JSON object
-                    setTotal(totalData.total);
+                    setTotal(data.total);
+                    setDashboardVersion(currentVersion => currentVersion + 1);
                 }
                 else {
-                    console.error(`Failed to delete expense with ID ${selectedExpense.id}.`);
+                    console.error(data.message || `Failed to delete expense with ID ${selectedExpense.id}.`);
                 }
             } catch (error) {
                 console.error(error);

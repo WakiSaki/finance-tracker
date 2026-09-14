@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import AlertMessage from './AlertMessage';
 
-function AddExpense({ expenses, categories, setExpenses, setTotal }) {
+function AddExpense({ categories, setExpenses, setTotal, setDashboardVersion }) {
     const [name, setName] = useState("");   // Track name using states
     const [amount, setAmount] = useState('');    // Track amount using states
     const [category, setCategory] = useState("");   // Track category using states
@@ -39,19 +39,15 @@ function AddExpense({ expenses, categories, setExpenses, setTotal }) {
                 body: JSON.stringify(newExpense)
             });
 
+            const data = await response.json();
+
             if(!response.ok) {
-                throw new Error(data.message);
+                throw new Error(data.message || 'Unable to add expense');
             }
 
-            // Update expense list to display new list to UI
-            const expenseList = await fetch("http://localhost:3000/api/expenses");  // Fetches the updated list of expenses from the backend
-            const expenseData = await expenseList.json();   // Converts the response to JSON
-            setExpenses(expenseData);   // Updates the expenses state in the App component with the new list of expenses
-
-            // Update total to display on UI
-            const totalResponse = await fetch("http://localhost:3000/expenses/total");  // Fetches the updated total from the backend
-            const totalData = await totalResponse.json();   // Converts the response to JSON
-            setTotal(totalData.total);
+            setExpenses(currentExpenses => [data.expense, ...currentExpenses]);
+            setTotal(data.total);
+            setDashboardVersion(currentVersion => currentVersion + 1);
 
             setSuccess(true);   // Set the success state to true, which can be used to display a success message
             setTimeout(() => setSuccess(false), 4000);   // Reset the success state to false after 3 seconds, which can be used to hide the success message

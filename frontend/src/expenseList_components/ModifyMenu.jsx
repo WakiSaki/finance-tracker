@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-function ModifyMenu({ categories, selectedExpense, setShowModify, setExpenses, setTotal, setSuccessModify }) {
+function ModifyMenu({ categories, selectedExpense, setShowModify, setExpenses, setTotal, setSuccessModify, setDashboardVersion }) {
     // Store the values entered in the modify form
     const [name, setName] = useState(selectedExpense.name);
     const [amount, setAmount] = useState(selectedExpense.amount);
@@ -28,21 +28,21 @@ function ModifyMenu({ categories, selectedExpense, setShowModify, setExpenses, s
             }
         );
 
+        const data = await response.json();
+
         //  Only execute if the expense was successfully updated
         if(response.ok) {
             setShowModify(false);   // Hide modify menu
             setSuccessModify(true); // Show alert message for successful modification
             setTimeout(() => setSuccessModify(false), 4000);    // Hide success alert after 3 seconds
 
-            // Update expense list to display new list to UI
-            const expenseList = await fetch("http://localhost:3000/api/expenses");  // Fetch the updated list of expenses from the backend
-            const expenseData = await expenseList.json();   // Convert the response to JSON
-            setExpenses(expenseData);   // Update the expenses state in the App component with the new list of expenses
-
-            // Update the displayed total from the backend response
-            const totalResponse = await fetch("http://localhost:3000/expenses/total");  // Fetch the updated total from the backend
-            const totalData = await totalResponse.json();   // Convert the response to JSON object
-            setTotal(totalData.total);  // Update the total state in the App component with the new total
+            setExpenses(currentExpenses => currentExpenses.map(expense =>
+                expense.id === data.expense.id ? data.expense : expense
+            ));
+            setTotal(data.total);
+            setDashboardVersion(currentVersion => currentVersion + 1);
+        } else {
+            console.error(data.message || 'Failed to update expense');
         }
     }
 
