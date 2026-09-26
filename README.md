@@ -18,6 +18,17 @@ A full stack application that allows users to manage expenses, organize spending
 - View monthly spending
 - Visualize spending with charts
 
+## Screenshots
+
+### Dashboard
+![Finance Tracker Dashboard](./screenshots/dashboard-screenshot.png)
+
+### Expense List
+![Finance Tracker Expense List](./screenshots/expenseList-screenshot.png)
+
+### Add Expenses
+![Finance Tracker Add Expense](./screenshots/expenseList-screenshot.png)
+
 ## Tech Stack
 ### Frontend
 - React
