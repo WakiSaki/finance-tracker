@@ -5,7 +5,9 @@ const { Pool } = pg;
 const pool = new Pool({
     user: "postgres",
     host: "localhost",
-    database: "finance-tracker",
+    database: process.env.NODE_ENV === "test"
+        ? "finance-tracker-test"
+        : "finance-tracker",
     password: "kimchiyang2017",
     port: 5432,
 });

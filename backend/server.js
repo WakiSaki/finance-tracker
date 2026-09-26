@@ -5,33 +5,16 @@ const { getDateInterval } = require('./helpers.js');
 
 const app = express();
 app.use(cors());
-app.use(express.json());
-const PORT = 3000;
-
-const expenses = [
-    {
-        id: 1,
-        name: "Groceries",
-        amount: 70.00,
-        category: "Food",
-        date: "2026-09-01"
-    },
-    {
-        id: 2,
-        name: "Internet",
-        amount: 100.00,
-        category: "Utilities",
-        date: "2025-01-22"
-    }
-]
 
 const categories = [
-    { id: 1, name: "Food" },
-    { id: 2, name: "Utilities" },
-    { id: 3, name: "Transportation" },
-    { id: 4, name: "Shopping" },
-    { id: 5, name: "Other" }
-]
+    {id: 1, name: "Food"},
+    {id: 2, name: "Utilities"},
+    {id: 3, name: "Groceries"},
+    {id: 4, name: "Shopping"},
+    {id: 5, name: "Transportation"},
+    {id: 6, name: "Entertainment"},
+    {id: 7, name: "Other"}
+];
 
 // Allows Express to read JSON request bodies
 app.use(express.json());
@@ -87,6 +70,8 @@ app.get('/api/expenses', async (_req, res) => {
 app.get('/dashboard', async (req, res) => {
     const interval = getDateInterval(req.query.range);
 
+    const today = new Date();
+
     if (!interval) {
         return res.status(400).json({ error: "Invalid date range" });
     }
@@ -97,8 +82,8 @@ app.get('/dashboard', async (req, res) => {
             WITH filtered_expenses AS (
                 SELECT id, expense_name, amount, category, expense_date
                 FROM expenses
-                WHERE expense_date >= CURRENT_DATE - $1::interval
-                  AND expense_date <= CURRENT_DATE
+                WHERE expense_date >= $2::date - $1::interval
+                  AND expense_date <= $2::date
             ),
             category_totals AS (
                 SELECT category, SUM(amount) AS total
@@ -154,7 +139,7 @@ app.get('/dashboard', async (req, res) => {
                     '[]'::json
                 ) AS daily_spending;
             `,
-            [interval]
+            [interval, today]
         );
 
         const dashboard = result.rows[0];
@@ -177,47 +162,6 @@ app.get('/dashboard', async (req, res) => {
 app.get('/categories', (req, res) => {
     res.json(categories);
 })
-
-// GET method that returns the total amount from all expenses
-app.get('/expenses/total', (req, res) => {
-    const total = expenses.reduce((sum, expense) => {
-        return sum + expense.amount;
-    }, 0);
-
-    res.json({
-        total: total
-    });
-});
-
-// GET method for expense with specific ID
-app.get('/expenses/:id', (req, res) => {
-    const id = Number(req.params.id);
-
-    const expense = expenses.find(expense => expense.id === id);
-
-    if(!expense) {
-        return res.status(404).json({
-            message: "Expense not found"
-        });
-    }
-
-    res.json(expense);
-});
-
-// GET method that returns expenses of a specified category
-app.get('/expenses/category/:category', (req, res) => {
-    const category = req.params.category;
-
-    const expense = expenses.find(expense => expense.category === category);
-
-    if(!expense) {
-        return res.status(404).json({
-            message: "Expense not found"
-        })
-    }
-
-    res.json(expense);
-});
 
 // POST method to add an expense
 app.post('/api/expense', async (req, res) => {
@@ -354,7 +298,4 @@ app.delete('/expenses/:id', async (req, res) => {
     }
 });
 
-// Starts the server
-app.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
-});
+module.exports = app;
