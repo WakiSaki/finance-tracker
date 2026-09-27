@@ -27,7 +27,7 @@ A full stack application that allows users to manage expenses, organize spending
 ![Finance Tracker Expense List](./screenshots/expenseList-screenshot.png)
 
 ### Add Expenses
-![Finance Tracker Add Expense](./screenshots/expenseList-screenshot.png)
+![Finance Tracker Add Expense](./screenshots/addExpense-screenshot.png)
 
 ## Tech Stack
 ### Frontend
