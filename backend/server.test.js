@@ -29,14 +29,6 @@ afterEach(() => {
 });
 
 describe("GET /dashboard", () => {
-    // Test whether the request is successful or not
-    test("returns dashboard data for a valid date range", async () => {
-        const response = await request(app)
-            .get("/dashboard?range=30days");
-
-        expect(response.status).toBe(200);
-    });
-
     // Test each date range for a valid response
     test.each(["30days", "3months", "6months", "1year", "2years"])("accepts the valid date range: %s", async (range) => {
         const response = await request(app)
@@ -172,6 +164,33 @@ describe("GET /dashboard", () => {
             { date: "2026-09-15", total: 100 },
             { date: "2026-09-20", total: 40 },
             { date: "2026-09-22", total: 60 }
-    ]);
-});
+        ]);
+    });
+
+    test("excludes expenses outside the selected date range", async () => {
+        await pool.query(`
+            INSERT INTO expenses (expense_name, amount, category, expense_date)
+            VALUES ('Old Expense', 500.00, 'Other', '2026-08-01');
+        `);
+
+        const response = await request(app)
+            .get("/dashboard?range=30days");
+
+        expect(response.status).toBe(200);
+
+        expect(response.body.total).toBe(260);
+    });
+
+    test("returns empty data when no expenses are in the selected range", async () => {
+        await pool.query("TRUNCATE TABLE expenses RESTART IDENTITY;");
+
+        const response = await request(app)
+            .get("/dashboard?range=30days");
+
+        expect(response.status).toBe(200);
+        expect(response.body.total).toBe(0);
+        expect(response.body.average).toBe(0);
+        expect(response.body.categoryTotals).toEqual([]);
+        expect(response.body.dailySpending).toEqual([]);
+    });
 });
